@@ -1,0 +1,1448 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Alert Studio</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+
+:root{
+  --bg:#09090f;
+  --panel:#12121c;
+  --panel2:#191925;
+  --border:#29293a;
+  --text:#fff;
+  --muted:#9999ad;
+  --accent:#8b5cf6;
+  --danger:#ef4444;
+}
+
+body{
+  margin:0;
+  background:linear-gradient(135deg,#08080d,#141020);
+  color:var(--text);
+  font-family:Inter,Arial,sans-serif;
+}
+
+button,input,textarea,select{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.hidden{
+  display:none!important;
+}
+
+.topbar{
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px;
+  border-bottom:1px solid var(--border);
+  background:#0b0b12;
+}
+
+.logo{
+  font-size:21px;
+  font-weight:800;
+}
+
+.logo span{
+  color:var(--accent);
+}
+
+.userbar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.container{
+  max-width:1300px;
+  margin:auto;
+  padding:28px;
+}
+
+.auth{
+  max-width:430px;
+  margin:80px auto;
+}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:22px;
+}
+
+h1,h2,h3{
+  margin-top:0;
+}
+
+.muted{
+  color:var(--muted);
+}
+
+.small{
+  font-size:13px;
+}
+
+.field{
+  margin-bottom:15px;
+}
+
+label{
+  display:block;
+  margin-bottom:7px;
+  color:#cfcfe0;
+  font-size:13px;
+}
+
+input,textarea,select{
+  width:100%;
+  padding:11px 12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#0d0d15;
+  color:white;
+  outline:none;
+}
+
+textarea{
+  min-height:100px;
+  resize:vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus{
+  border-color:var(--accent);
+}
+
+button{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 15px;
+  color:white;
+  background:#20202e;
+}
+
+button:hover{
+  filter:brightness(1.12);
+}
+
+.primary{
+  background:var(--accent);
+  border-color:var(--accent);
+}
+
+.danger{
+  background:#35151a;
+  border-color:#66232b;
+}
+
+.row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.between{
+  justify-content:space-between;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:290px 1fr;
+  gap:22px;
+}
+
+.alert-list{
+  margin-top:15px;
+  max-height:70vh;
+  overflow:auto;
+}
+
+.alert-card{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  padding:14px;
+  border-radius:11px;
+  margin-bottom:10px;
+  cursor:pointer;
+}
+
+.alert-card:hover,
+.alert-card.active{
+  border-color:var(--accent);
+}
+
+.badge{
+  background:#29293b;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:11px;
+}
+
+.editor{
+  display:grid;
+  grid-template-columns:1fr 380px;
+  gap:22px;
+  margin-top:20px;
+}
+
+.preview{
+  height:430px;
+  border-radius:15px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(circle at center,#29213d,#0a0a10 70%);
+  overflow:hidden;
+  position:sticky;
+  top:84px;
+}
+
+.preview-box{
+  width:90%;
+  padding:25px;
+  border-radius:18px;
+  text-align:center;
+}
+
+.preview-image{
+  max-width:180px;
+  max-height:150px;
+  object-fit:contain;
+  display:block;
+  margin:0 auto 15px;
+}
+
+.notice{
+  margin-top:12px;
+  padding:11px;
+  border-radius:10px;
+  background:#191925;
+  font-size:13px;
+}
+
+.error{
+  color:#ff8c98;
+}
+
+.success{
+  color:#9be7b0;
+}
+
+.color-row{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+@media(max-width:900px){
+  .layout,
+  .editor{
+    grid-template-columns:1fr;
+  }
+
+  .preview{
+    position:static;
+  }
+}
+</style>
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+  <div class="logo">
+    Alert<span>Studio</span>
+  </div>
+
+  <div id="userBar" class="userbar hidden">
+    <span id="userEmail" class="small muted"></span>
+    <button id="logoutButton">Log out</button>
+  </div>
+
+</header>
+
+<main class="container">
+
+<!-- LOGIN -->
+
+<section id="loginView" class="auth panel">
+
+  <h1>Alert Studio</h1>
+
+  <p class="muted">
+    Create browser alerts for OBS.
+  </p>
+
+  <div class="field">
+    <label>Email</label>
+    <input id="email" type="email">
+  </div>
+
+  <div class="field">
+    <label>Password</label>
+    <input id="password" type="password">
+  </div>
+
+  <div class="row">
+    <button class="primary" id="loginButton">
+      Log in
+    </button>
+
+```
+<button id="signupButton">
+  Create account
+</button>
+```
+
+  </div>
+
+  <div id="authMessage" class="notice"></div>
+
+</section>
+
+<!-- DASHBOARD -->
+
+<section id="dashboard" class="hidden">
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+
+<aside class="panel">
+
+  <div class="row between">
+
+```
+<h3>My Alerts</h3>
+
+<button class="primary" id="newAlertButton">
+  +
+</button>
+```
+
+  </div>
+
+  <div id="alertList" class="alert-list"></div>
+
+</aside>
+
+<!-- EDITOR -->
+
+<section class="panel">
+
+  <div class="row between">
+
+```
+<div>
+  <h2 id="editorTitle">
+    New Alert
+  </h2>
+
+  <div class="small muted">
+    Configure your OBS alert.
+  </div>
+</div>
+
+<div class="row">
+
+  <button id="obsButton">
+    OBS URL
+  </button>
+
+  <button class="primary" id="saveButton">
+    Save
+  </button>
+
+</div>
+```
+
+  </div>
+
+<div class="editor">
+
+<div>
+
+  <div class="field">
+    <label>Alert name</label>
+    <input id="alertName">
+  </div>
+
+  <div class="field">
+
+```
+<label>Alert type</label>
+
+<select id="alertType">
+
+  <option value="follower">
+    Follower
+  </option>
+
+  <option value="subscriber">
+    Subscriber
+  </option>
+
+  <option value="donation">
+    Donation
+  </option>
+
+  <option value="member">
+    Member
+  </option>
+
+  <option value="custom">
+    Custom
+  </option>
+
+</select>
+```
+
+  </div>
+
+  <div class="field">
+
+```
+<label>Title</label>
+
+<input id="alertTitle">
+```
+
+  </div>
+
+  <div class="field">
+
+```
+<label>Message</label>
+
+<textarea id="alertMessage"></textarea>
+
+<div class="small muted">
+  Available variables:
+  {name} {amount} {message}
+</div>
+```
+
+  </div>
+
+  <div class="field">
+
+```
+<label>Image / GIF URL</label>
+
+<input
+  id="imageUrl"
+  placeholder="https://example.com/alert.gif"
+>
+```
+
+  </div>
+
+  <div class="field">
+
+```
+<label>Sound URL</label>
+
+<input
+  id="soundUrl"
+  placeholder="https://example.com/alert.mp3"
+>
+```
+
+  </div>
+
+  <div class="field">
+
+```
+<label>Duration (milliseconds)</label>
+
+<input
+  id="duration"
+  type="number"
+  min="1000"
+  max="30000"
+>
+```
+
+  </div>
+
+  <div class="field">
+
+```
+<label>Animation</label>
+
+<select id="animation">
+
+  <option value="pop">Pop</option>
+  <option value="slide">Slide</option>
+  <option value="fade">Fade</option>
+  <option value="bounce">Bounce</option>
+
+</select>
+```
+
+  </div>
+
+  <div class="color-row">
+
+```
+<div class="field">
+
+  <label>Text</label>
+
+  <input
+    id="textColor"
+    type="color"
+  >
+
+</div>
+
+<div class="field">
+
+  <label>Background</label>
+
+  <input
+    id="backgroundColor"
+    type="color"
+  >
+
+</div>
+
+<div class="field">
+
+  <label>Accent</label>
+
+  <input
+    id="accentColor"
+    type="color"
+  >
+
+</div>
+```
+
+  </div>
+
+  <div class="field">
+
+```
+<label>Font size</label>
+
+<input
+  id="fontSize"
+  type="number"
+  min="12"
+  max="120"
+>
+```
+
+  </div>
+
+  <div class="field">
+
+```
+<label>
+
+  <input
+    id="enabled"
+    type="checkbox"
+    style="width:auto"
+  >
+
+  Enabled
+
+</label>
+```
+
+  </div>
+
+  <div class="row">
+
+```
+<button
+  class="primary"
+  id="testButton"
+>
+  Send test alert
+</button>
+
+<button
+  class="danger hidden"
+  id="deleteButton"
+>
+  Delete
+</button>
+```
+
+  </div>
+
+  <div id="saveMessage" class="notice"></div>
+
+</div>
+
+<!-- PREVIEW -->
+
+<div>
+
+<div id="preview" class="preview">
+
+  <div id="previewBox" class="preview-box">
+
+```
+<img
+  id="previewImage"
+  class="preview-image hidden"
+>
+
+<div
+  id="previewTitle"
+  style="font-size:25px;font-weight:800"
+>
+  New Alert
+</div>
+
+<div
+  id="previewMessage"
+  style="font-size:42px;font-weight:900;margin-top:8px"
+>
+  Test User triggered an alert!
+</div>
+```
+
+  </div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+</div>
+
+</section>
+
+</main>
+
+<script>
+
+const SUPABASE_URL =
+"https://nalrvbspotjyrgvnmigf.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_OHDS4AwRSWUbk0s6RmbY3w_GcoxqY71";
+
+const client =
+supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+
+let currentUser = null;
+let currentAlert = null;
+let alerts = [];
+
+
+const $ = id =>
+document.getElementById(id);
+
+
+function message(element,text,success=false){
+
+  element.textContent = text;
+
+  element.className =
+    "notice " +
+    (success ? "success" : "error");
+
+}
+
+
+function getForm(){
+
+  return {
+
+    name:
+      $("alertName").value.trim()
+      || "My Alert",
+
+    type:
+      $("alertType").value,
+
+    title:
+      $("alertTitle").value
+      || "New Alert",
+
+    message:
+      $("alertMessage").value
+      || "{name} triggered an alert!",
+
+    image_url:
+      $("imageUrl").value.trim()
+      || null,
+
+    sound_url:
+      $("soundUrl").value.trim()
+      || null,
+
+    duration_ms:
+      Math.max(
+        1000,
+        Math.min(
+          30000,
+          Number($("duration").value) || 5000
+        )
+      ),
+
+    animation:
+      $("animation").value,
+
+    text_color:
+      $("textColor").value,
+
+    background_color:
+      $("backgroundColor").value,
+
+    accent_color:
+      $("accentColor").value,
+
+    font_size:
+      Math.max(
+        12,
+        Math.min(
+          120,
+          Number($("fontSize").value) || 42
+        )
+      ),
+
+    enabled:
+      $("enabled").checked
+
+  };
+
+}
+
+
+function updatePreview(){
+
+  const x = getForm();
+
+  $("previewBox").style.color =
+    x.text_color;
+
+  $("previewBox").style.background =
+    x.background_color;
+
+  $("previewBox").style.border =
+    "2px solid " + x.accent_color;
+
+  $("previewTitle").textContent =
+    x.title;
+
+  $("previewMessage").textContent =
+    x.message
+      .replaceAll("{name}","Test User")
+      .replaceAll("{amount}","10.00")
+      .replaceAll("{message}","Hello!");
+
+  $("previewMessage").style.fontSize =
+    x.font_size + "px";
+
+
+  const image =
+    $("previewImage");
+
+  if(x.image_url){
+
+    image.src =
+      x.image_url;
+
+    image.classList.remove(
+      "hidden"
+    );
+
+  }else{
+
+    image.removeAttribute("src");
+
+    image.classList.add(
+      "hidden"
+    );
+
+  }
+
+}
+
+
+function newAlert(){
+
+  currentAlert = null;
+
+  $("editorTitle").textContent =
+    "New Alert";
+
+  $("alertName").value =
+    "My Alert";
+
+  $("alertType").value =
+    "custom";
+
+  $("alertTitle").value =
+    "New Alert";
+
+  $("alertMessage").value =
+    "{name} triggered an alert!";
+
+  $("imageUrl").value = "";
+
+  $("soundUrl").value = "";
+
+  $("duration").value =
+    5000;
+
+  $("animation").value =
+    "pop";
+
+  $("textColor").value =
+    "#ffffff";
+
+  $("backgroundColor").value =
+    "#161622";
+
+  $("accentColor").value =
+    "#8b5cf6";
+
+  $("fontSize").value =
+    42;
+
+  $("enabled").checked =
+    true;
+
+  $("deleteButton")
+    .classList
+    .add("hidden");
+
+  updatePreview();
+
+}
+
+
+function loadAlert(alert){
+
+  currentAlert =
+    alert;
+
+  $("editorTitle").textContent =
+    "Edit " + alert.name;
+
+  $("alertName").value =
+    alert.name;
+
+  $("alertType").value =
+    alert.type;
+
+  $("alertTitle").value =
+    alert.title;
+
+  $("alertMessage").value =
+    alert.message;
+
+  $("imageUrl").value =
+    alert.image_url || "";
+
+  $("soundUrl").value =
+    alert.sound_url || "";
+
+  $("duration").value =
+    alert.duration_ms;
+
+  $("animation").value =
+    alert.animation;
+
+  $("textColor").value =
+    alert.text_color;
+
+  $("backgroundColor").value =
+    alert.background_color;
+
+  $("accentColor").value =
+    alert.accent_color;
+
+  $("fontSize").value =
+    alert.font_size;
+
+  $("enabled").checked =
+    alert.enabled;
+
+  $("deleteButton")
+    .classList
+    .remove("hidden");
+
+  updatePreview();
+
+  renderAlerts();
+
+}
+
+
+async function loadAlerts(){
+
+  const {data,error} =
+    await client
+      .from("alerts")
+      .select("*")
+      .order(
+        "created_at",
+        {ascending:false}
+      );
+
+  if(error){
+
+    message(
+      $("saveMessage"),
+      error.message
+    );
+
+    return;
+  }
+
+  alerts =
+    data || [];
+
+  renderAlerts();
+
+}
+
+
+function renderAlerts(){
+
+  if(!alerts.length){
+
+    $("alertList").innerHTML =
+      `<div class="small muted">
+        No alerts yet.
+      </div>`;
+
+    return;
+  }
+
+
+  $("alertList").innerHTML =
+    alerts.map(alert => `
+
+      <div
+        class="alert-card ${
+          currentAlert &&
+          currentAlert.id === alert.id
+          ? "active"
+          : ""
+        }"
+        data-id="${alert.id}"
+      >
+
+        <div class="row between">
+
+          <strong>
+            ${escapeHtml(alert.name)}
+          </strong>
+
+          <span class="badge">
+            ${escapeHtml(alert.type)}
+          </span>
+
+        </div>
+
+        <div
+          class="small muted"
+          style="margin-top:6px"
+        >
+          ${escapeHtml(alert.title)}
+        </div>
+
+      </div>
+
+    `).join("");
+
+
+  document
+    .querySelectorAll(".alert-card")
+    .forEach(card => {
+
+      card.onclick = () => {
+
+        const alert =
+          alerts.find(
+            x => x.id === card.dataset.id
+          );
+
+        if(alert)
+          loadAlert(alert);
+
+      };
+
+    });
+
+}
+
+
+function escapeHtml(value){
+
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+
+}
+
+
+async function saveAlert(){
+
+  if(!currentUser)
+    return;
+
+
+  const data =
+    getForm();
+
+
+  let result;
+
+
+  if(currentAlert){
+
+    result =
+      await client
+        .from("alerts")
+        .update(data)
+        .eq(
+          "id",
+          currentAlert.id
+        )
+        .eq(
+          "user_id",
+          currentUser.id
+        )
+        .select()
+        .single();
+
+  }else{
+
+    result =
+      await client
+        .from("alerts")
+        .insert({
+
+          ...data,
+
+          user_id:
+            currentUser.id
+
+        })
+        .select()
+        .single();
+
+  }
+
+
+  if(result.error){
+
+    message(
+      $("saveMessage"),
+      result.error.message
+    );
+
+    return;
+
+  }
+
+
+  currentAlert =
+    result.data;
+
+  message(
+    $("saveMessage"),
+    "Alert saved successfully!",
+    true
+  );
+
+  await loadAlerts();
+
+  loadAlert(result.data);
+
+}
+
+
+async function sendTest(){
+
+  if(!currentAlert){
+
+    await saveAlert();
+
+    if(!currentAlert)
+      return;
+
+  }
+
+
+  const data =
+    getForm();
+
+
+  const result =
+    await client
+      .from("alert_events")
+      .insert({
+
+        user_id:
+          currentUser.id,
+
+        alert_id:
+          currentAlert.id,
+
+        type:
+          data.type,
+
+        name:
+          "Test User",
+
+        amount:
+          data.type === "donation"
+            ? 10
+            : null,
+
+        message:
+          "This is a test alert."
+
+      });
+
+
+  if(result.error){
+
+    message(
+      $("saveMessage"),
+      result.error.message
+    );
+
+  }else{
+
+    message(
+      $("saveMessage"),
+      "Test alert sent!",
+      true
+    );
+
+  }
+
+}
+
+
+async function deleteAlert(){
+
+  if(!currentAlert)
+    return;
+
+
+  if(!confirm(
+    "Delete this alert?"
+  ))
+    return;
+
+
+  const result =
+    await client
+      .from("alerts")
+      .delete()
+      .eq(
+        "id",
+        currentAlert.id
+      )
+      .eq(
+        "user_id",
+        currentUser.id
+      );
+
+
+  if(result.error){
+
+    message(
+      $("saveMessage"),
+      result.error.message
+    );
+
+    return;
+
+  }
+
+
+  newAlert();
+
+  await loadAlerts();
+
+}
+
+
+function getOBSUrl(){
+
+  if(!currentAlert){
+
+    message(
+      $("saveMessage"),
+      "Save the alert first."
+    );
+
+    return;
+
+  }
+
+
+  const url =
+    new URL(
+      "alert.html",
+      window.location.href
+    );
+
+
+  url.searchParams.set(
+    "user",
+    currentUser.id
+  );
+
+  url.searchParams.set(
+    "alert",
+    currentAlert.id
+  );
+
+
+  prompt(
+    "Copy this URL into your OBS Browser Source:",
+    url.href
+  );
+
+}
+
+
+async function login(){
+
+  const result =
+    await client.auth
+      .signInWithPassword({
+
+        email:
+          $("email").value,
+
+        password:
+          $("password").value
+
+      });
+
+
+  if(result.error){
+
+    message(
+      $("authMessage"),
+      result.error.message
+    );
+
+  }
+
+}
+
+
+async function signup(){
+
+  const result =
+    await client.auth
+      .signUp({
+
+        email:
+          $("email").value,
+
+        password:
+          $("password").value
+
+      });
+
+
+  if(result.error){
+
+    message(
+      $("authMessage"),
+      result.error.message
+    );
+
+  }else{
+
+    message(
+      $("authMessage"),
+      "Account created. Check your email if confirmation is enabled.",
+      true
+    );
+
+  }
+
+}
+
+
+async function logout(){
+
+  await client.auth.signOut();
+
+}
+
+
+async function showUser(user){
+
+  currentUser =
+    user;
+
+  const loggedIn =
+    !!user;
+
+
+  $("loginView")
+    .classList
+    .toggle(
+      "hidden",
+      loggedIn
+    );
+
+  $("dashboard")
+    .classList
+    .toggle(
+      "hidden",
+      !loggedIn
+    );
+
+  $("userBar")
+    .classList
+    .toggle(
+      "hidden",
+      !loggedIn
+    );
+
+
+  if(loggedIn){
+
+    $("userEmail")
+      .textContent =
+      user.email;
+
+    newAlert();
+
+    await loadAlerts();
+
+  }
+
+}
+
+
+$("loginButton")
+  .onclick =
+  login;
+
+$("signupButton")
+  .onclick =
+  signup;
+
+$("logoutButton")
+  .onclick =
+  logout;
+
+$("newAlertButton")
+  .onclick =
+  newAlert;
+
+$("saveButton")
+  .onclick =
+  saveAlert;
+
+$("testButton")
+  .onclick =
+  sendTest;
+
+$("deleteButton")
+  .onclick =
+  deleteAlert;
+
+$("obsButton")
+  .onclick =
+  getOBSUrl;
+
+
+[
+  "alertName",
+  "alertType",
+  "alertTitle",
+  "alertMessage",
+  "imageUrl",
+  "soundUrl",
+  "duration",
+  "animation",
+  "textColor",
+  "backgroundColor",
+  "accentColor",
+  "fontSize",
+  "enabled"
+].forEach(id => {
+
+  $(id).addEventListener(
+    "input",
+    updatePreview
+  );
+
+});
+
+
+client.auth.onAuthStateChange(
+  (_event,session) => {
+
+    setTimeout(
+      () =>
+        showUser(
+          session?.user || null
+        ),
+      0
+    );
+
+  }
+);
+
+
+(async() => {
+
+  const result =
+    await client.auth
+      .getSession();
+
+  await showUser(
+    result.data.session?.user
+    || null
+  );
+
+})();
+
+</script>
+
+</body>
+</html>
